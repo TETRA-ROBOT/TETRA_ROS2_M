@@ -12,10 +12,12 @@ from launch_ros.actions import Node
 # this is the function launch  system will look for
 def generate_launch_description():
 
+
     tetra_service_node = Node(
-        package='tetra_service', 
+        package='tetra_service',
         executable='tetra_service',
-        output='screen'
+        output='screen',
+        parameters=[{'m_dHome_ID': 0}]
     )
 
     # create and return launch description object
