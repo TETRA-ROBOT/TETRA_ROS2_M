@@ -25,6 +25,7 @@ if($ENV{ROS_VERSION} EQUAL 1)
 else()
   find_package(ament_cmake_auto REQUIRED)
   ament_auto_find_build_dependencies()
+  find_package(camera_info_manager REQUIRED)
 endif()
 
 find_package(OpenCV REQUIRED)
@@ -85,6 +86,9 @@ else()
     src/ros2/usb_cam_node.cpp
   )
 
+  ament_target_dependencies(${PROJECT_NAME}_node
+    camera_info_manager
+  )
   target_link_libraries(${PROJECT_NAME}_node
     ${PROJECT_NAME})
 

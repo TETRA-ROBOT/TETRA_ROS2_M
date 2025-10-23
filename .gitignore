@@ -1,0 +1,22 @@
+# ROS2 build and log artifacts
+build/
+install/
+log/
+
+# Colcon/ROS2 Python cache
+**/__pycache__/
+
+# VSCode settings (optional, if using VSCode)
+.vscode/
+
+# CMake and other build system files
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+
+# Misc
+*.swp
+*.swo
+*.bak
+*.tmp
