@@ -1993,7 +1993,7 @@ public:
 		bool bResult = false;
 
 		//Wait Action server..
-		while (!this->nav_to_pose_action_client->wait_for_action_server()) 
+		if (!this->nav_to_pose_action_client->action_server_is_ready()) 
 		{
 			RCLCPP_INFO(get_logger(), "Waiting for action server...");
 		}
