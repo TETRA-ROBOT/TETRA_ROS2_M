@@ -1995,7 +1995,8 @@ public:
 		//Wait Action server..
 		if (!this->nav_to_pose_action_client->action_server_is_ready()) 
 		{
-			RCLCPP_INFO(get_logger(), "Waiting for action server...");
+			RCLCPP_INFO(get_logger(), "Waiting for action server...");			
+			return bResult;
 		}
 
 		//Goal Cancel Send//
