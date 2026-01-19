@@ -590,6 +590,9 @@ public:
 
 			}
 			string strTF_frame_name = _pAR_tag_pose.m_strFamily + to_string(_pAR_tag_pose.m_iApril_tag_id);
+			if (!tf2_buffer_->canTransform("camera", strTF_frame_name, tf2::TimePointZero)) {
+				return;
+			}
 			//TF
 			rclcpp::Time now = this->get_clock()->now();
             		geometry_msgs::msg::TransformStamped transformStamped;
