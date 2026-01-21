@@ -277,6 +277,7 @@ typedef struct DYNAMIC_PARAM
     double MAX_Linear_velocity = 1.0;
     double m_linear_vel = 0.0;
     double m_angular_vel = 0.0;
+	bool m_bFlag_onetime = true;
 }DYNAMIC_PARAM;
 DYNAMIC_PARAM _pDynamic_param;
 
@@ -313,7 +314,7 @@ public:
 
 		//publish list/////////////////////////////////////////////////////////////////////////////////////
 		//cmd_vel_publisher = this->create_publisher<geometry_msgs::msg::Twist>("cmd_vel", 10);
-		cmd_vel_publisher = this->create_publisher<geometry_msgs::msg::Twist>("cmd_vel_manual", 10);
+		cmd_vel_publisher = this->create_publisher<geometry_msgs::msg::Twist>("cmd_vel_nav", 10);
 		pose_reset_publisher = this->create_publisher<std_msgs::msg::Int32>("pose_reset", 10);
 		initial_pose_publisher = this->create_publisher<geometry_msgs::msg::PoseWithCovarianceStamped>("initialpose", 10);
 		movebase_publisher = this->create_publisher<std_msgs::msg::Int32>("movebase", 10);
@@ -1222,7 +1223,7 @@ public:
 									_pGoal_pose.goal_positionY = atof(ptr);
 									break;
 								case 2:
-									_pGoal_pose.goal_quarterZ = atof(ptr);
+									_pGoal_pose.goal_positionZ = atof(ptr);
 									break;
 								case 3:
 									_pGoal_pose.goal_quarterX = atof(ptr);
@@ -1866,6 +1867,12 @@ public:
 		send_goal_options.result_callback = std::bind(&TETRA_SERVICE::resultCallback, this, std::placeholders::_1);
 
 		//Send Goal//
+		auto parameters = std::vector<rclcpp::Parameter>();
+		//parameters.emplace_back(rclcpp::Parameter("FollowPath.desired_linear_vel", _pDynamic_param.MAX_Linear_velocity));
+		parameters.emplace_back(rclcpp::Parameter("FollowPath.rotate_to_heading_angular_vel", 0.785398));
+		parameters.emplace_back(rclcpp::Parameter("FollowPath.rotate_to_heading_min_angle", 0.785398));
+		set_speed_parameter_client_->set_parameters(parameters);
+		_pDynamic_param.m_bFlag_onetime = true;
 		nav_to_pose_action_client->async_send_goal(goal_msg, send_goal_options);
     }
 
@@ -1953,8 +1960,41 @@ public:
 
 
 		//Check robot status : noaml or docking?
-		if(_pRobot.m_iCallback_Charging_status <= 1 && (_pAR_tag_pose.m_iApril_tag_id == -1 || _pAR_tag_pose.m_transform_pose_x <= 0.5)) //Nomal
-    	{
+		if(_pRobot.m_iCallback_Charging_status > 1 )
+		{
+			RCLCPP_INFO(get_logger(), "Go to Depart Move Charging_status > 1 !!");
+			int m_iback_cnt = 0;
+
+			while(m_iback_cnt < 30)
+			{
+				if(_pFlag_Value.m_bFlag_Obstacle_Center)
+				{
+					cmd.angular.z = 0.0;
+					cmd.linear.x = 0.0;
+					cmd_vel_publisher->publish(cmd);
+				}
+				else
+				{
+					cmd.angular.z = 0.0;
+					cmd.linear.x = 0.2;
+					cmd_vel_publisher->publish(cmd);
+					m_iback_cnt++;
+				}
+				usleep(100000); //100ms
+			}
+
+			cmd.angular.z = 0.0;
+			cmd.linear.x = 0.0;
+			cmd_vel_publisher->publish(cmd);
+
+			//Nav Goal call///////////////////////////////////////////////////////
+			Set_goal(_pGoal_pose.goal_positionX, _pGoal_pose.goal_positionY, _pGoal_pose.goal_positionZ,
+					_pGoal_pose.goal_quarterX, _pGoal_pose.goal_quarterY, _pGoal_pose.goal_quarterZ, _pGoal_pose.goal_quarterW);
+
+			bResult = true;
+		}
+		else if((_pAR_tag_pose.m_iApril_tag_id == -1 || _pAR_tag_pose.m_transform_pose_x >= 0.85)) //Nomal
+		{
 			RCLCPP_INFO(get_logger(), "Goto Nomal Loop !!");
 
 			//Nav Goal call///////////////////////////////////////////////////////
@@ -1998,7 +2038,8 @@ public:
 		//Wait Action server..
 		if (!this->nav_to_pose_action_client->action_server_is_ready()) 
 		{
-			RCLCPP_INFO(get_logger(), "Waiting for action server...");			
+			RCLCPP_INFO(get_logger(), "No available action server...");
+			response->command_result = bResult;			
 			return bResult;
 		}
 
@@ -2025,6 +2066,7 @@ public:
         auto parameters = std::vector<rclcpp::Parameter>();
         parameters.emplace_back(rclcpp::Parameter("FollowPath.desired_linear_vel", request->max_speed));
         set_speed_parameter_client_->set_parameters(parameters);
+		_pDynamic_param.MAX_Linear_velocity = request->max_speed;
 		
 		/*
 		float32 max_speed
@@ -2039,7 +2081,64 @@ public:
 	//Navigation to Pose Feedback Callback//
 	void feedbackCallback(GoalHandleNavigateToPose::SharedPtr,const std::shared_ptr<const NavigateToPose::Feedback> feedback)
 	{
-		RCLCPP_INFO(get_logger(), "Distance remaininf = %f", feedback->distance_remaining);
+		_pDynamic_param.m_bFlag_onetime = true;
+		if(_pDynamic_param.m_bFlag_onetime)
+		{
+			if(feedback->distance_remaining < 0.1 && feedback->distance_remaining >= 0)
+			{
+				_pDynamic_param.m_bFlag_onetime = false; 
+				
+				// 목표 quaternion에서 yaw 계산
+				tf2::Quaternion goal_q(
+					_pGoal_pose.goal_quarterX,
+					_pGoal_pose.goal_quarterY,
+					_pGoal_pose.goal_quarterZ,
+					_pGoal_pose.goal_quarterW
+				);
+				tf2::Matrix3x3 goal_m(goal_q);
+				double goal_roll, goal_pitch, goal_yaw;
+				goal_m.getRPY(goal_roll, goal_pitch, goal_yaw);
+				
+				tf2::Quaternion robot_q(
+					footprint.orientation.x,
+					footprint.orientation.y,
+					footprint.orientation.z,
+					footprint.orientation.w
+				);
+				tf2::Matrix3x3 robot_m(robot_q);
+				double robot_roll, robot_pitch, robot_yaw;
+				robot_m.getRPY(robot_roll, robot_pitch, robot_yaw);
+
+				// 현재 로봇의 yaw와 목표 yaw의 차이 계산
+				double angle_diff = robot_yaw - goal_yaw;
+				//RCLCPP_INFO(get_logger(), "robot_yaw= %.3f", robot_yaw);
+				//RCLCPP_INFO(get_logger(), "goal_yaw = %.3f", goal_yaw);
+				
+				// 각도 차이를 -π ~ π 범위로 정규화
+				while (angle_diff > M_PI) angle_diff -= 2.0 * M_PI;
+				while (angle_diff < -M_PI) angle_diff += 2.0 * M_PI;
+				angle_diff = std::abs(angle_diff);
+				//RCLCPP_INFO(get_logger(), "angle_diff = %.3f", angle_diff);
+				
+				auto parameters = std::vector<rclcpp::Parameter>();
+				if(angle_diff <= 0.1) // 1도 이하일 때만 적용
+				{
+					parameters.emplace_back(rclcpp::Parameter("FollowPath.rotate_to_heading_angular_vel", 0.1));
+					parameters.emplace_back(rclcpp::Parameter("FollowPath.rotate_to_heading_min_angle", 0.1));
+				}
+				else if(angle_diff <= 0.785398) // 45도 이하일 때만 적용
+				{
+					parameters.emplace_back(rclcpp::Parameter("FollowPath.rotate_to_heading_angular_vel", angle_diff));
+					parameters.emplace_back(rclcpp::Parameter("FollowPath.rotate_to_heading_min_angle", angle_diff));
+				}
+				else
+				{
+					parameters.emplace_back(rclcpp::Parameter("FollowPath.rotate_to_heading_angular_vel", 0.785398));
+					parameters.emplace_back(rclcpp::Parameter("FollowPath.rotate_to_heading_min_angle", 0.785398));
+				}
+				set_speed_parameter_client_->set_parameters(parameters);
+			}
+		}
 	}
 
 	//Navigation to Pose Result Callback//
