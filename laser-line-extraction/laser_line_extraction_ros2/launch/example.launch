@@ -1,0 +1,18 @@
+<launch>
+  <node name="line_extractor_node" pkg="laser_line_extraction_ros2" exec="line_extraction_node" output="screen">
+    <param name="frame_id" value="front_laser_link" />
+    <param name="scan_topic" value="/front_scan" />
+    <param name="publish_markers" value="true" />
+    <param name="bearing_std_dev" value="1e-5" />
+    <param name="range_std_dev" value="0.012" />
+    <param name="least_sq_angle_thresh" value="0.0001" />
+    <param name="least_sq_radius_thresh" value="0.0001" />
+    <param name="max_line_gap" value="0.2" /> <!-- [0.5] Maximum distance between two points in the same line (m) -->
+    <param name="min_line_length" value="0.05" /> <!-- [0.7] Lines shorter than this are not published (m)-->
+    <param name="min_range" value="0.05" /> <!-- [0.5] --> 
+    <param name="max_range" value="4.0" /> <!-- [250.0] -->
+    <param name="min_split_dist" value="0.04" /> <!-- When performing "split" step of split and merge, a split between two points results when the two points are at least this far apart (m)-->
+    <param name="outlier_dist" value="0.06" /> <!-- Points who are at least this distance from all their neighbours are considered outliers (m)-->
+    <param name="min_line_points" value="5" /> <!-- [10] Lines with fewer points than this are not published-->
+  </node>
+</launch>

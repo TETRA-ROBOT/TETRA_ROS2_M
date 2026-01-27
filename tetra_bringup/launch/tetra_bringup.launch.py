@@ -116,6 +116,16 @@ def generate_launch_description():
         executable='rosapi_node',
         output='screen',
     )
+
+    # web_video_server_node 
+    web_video_server_node = Node(
+        package='web_video_server', 
+        executable='web_video_server',
+        output='screen',
+        parameters=[
+            {"quality": 1}
+        ]
+    )
     
     
     # create and return launch description object
@@ -130,7 +140,8 @@ def generate_launch_description():
             rsp_node,
             tetra_service_node,
             rosbridge_server,
-            rosapi_node,
+            rosapi_node,            
+            web_video_server_node,
             
 		# USB Camera
 		IncludeLaunchDescription(

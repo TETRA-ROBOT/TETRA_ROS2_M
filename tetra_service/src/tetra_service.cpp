@@ -98,6 +98,9 @@ int  m_iBack_cnt = 0;
 int  m_iPose_reset_cnt = 0;
 //ros2 launch mode check//
 int  ex_ilaunchMode = 0;
+int  ex_iRetry_count = 0;
+int  ex_iRetry_Max_count = 9999;
+
 
 //CALC TF distance data
 double m_dTF_calc_poseX = 0.0;
@@ -667,33 +670,45 @@ public:
 	//Sick Tim571 Lidar Callback
 	void SickCallback(const sensor_msgs::msg::LaserScan::SharedPtr msg)
 	{
-		int size = msg->ranges.size();
-		//printf("sick_lidar_size: %d \n", size);
+		if (!msg) {
+			RCLCPP_ERROR(this->get_logger(), "Received null LaserScan message");
+			return;
+		}
 
-		//Center Check//
-		int C_minIndex = 268;//270;
-		int C_maxIndex = 536; //540;
+		int size = msg->ranges.size();
+		if (size == 0) {
+			RCLCPP_WARN(this->get_logger(), "LaserScan ranges is empty");
+			return;
+		}
+
+		int C_minIndex = 268;
+		int C_maxIndex = 536;
+
+		// 범위 체크: ranges 크기보다 크면 잘라내기
+		if (C_maxIndex > size) {
+			C_maxIndex = size;
+		}
+
 		int C_closestIndex = -1;
 		double C_minVal = 0.3;
 
-		for (int i = C_minIndex; i < C_maxIndex; i++)
-		{
-			if ((msg->ranges[i] <= C_minVal) && (msg->ranges[i] >= msg->range_min) && (msg->ranges[i] <= msg->range_max))
+		for (int i = C_minIndex; i < C_maxIndex; i++) {
+			if ((msg->ranges[i] <= C_minVal) &&
+				(msg->ranges[i] >= msg->range_min) &&
+				(msg->ranges[i] <= msg->range_max))
 			{
 				C_minVal = msg->ranges[i];
 				C_closestIndex = i;
 			}
 		}
-		//printf("C_closestIndex: %d || check: %f \n" , C_closestIndex, msg->ranges[C_closestIndex]);
-		if(msg->ranges[C_closestIndex] > 0.1)
-		{
-			//printf("C_closestIndex: %d || check: %f \n" , C_closestIndex, msg->ranges[C_closestIndex]);
-			_pFlag_Value.m_bFlag_Obstacle_Center = true;
-		}
-		else
-			_pFlag_Value.m_bFlag_Obstacle_Center = false;
 
+		if (C_closestIndex != -1 && msg->ranges[C_closestIndex] > 0.1) {
+			_pFlag_Value.m_bFlag_Obstacle_Center = true;
+		} else {
+			_pFlag_Value.m_bFlag_Obstacle_Center = false;
+		}
 	}
+
 
 	//Cygbot Lidar Callback
 	void CygbotCallback(const sensor_msgs::msg::LaserScan::SharedPtr msg)
@@ -2144,9 +2159,10 @@ public:
 	//Navigation to Pose Result Callback//
 	void resultCallback(const GoalHandleNavigateToPose::WrappedResult & result)
 	{
+		int ret = -1;
 		switch (result.code) 
 		{
-			case rclcpp_action::ResultCode::SUCCEEDED:
+			case rclcpp_action::ResultCode::SUCCEEDED:				
 				RCLCPP_INFO(get_logger(), "NavigateToPose: Success!!!");
 				_pRobot.m_iMovebase_Result = 3;
 				movebase.data = 3;
@@ -2156,10 +2172,12 @@ public:
 				ToggleOn_Call(63); //White led
 				sleep(1);
 
+				ex_iRetry_count = 0; //retry count reset
+
 				if(_pFlag_Value.m_bflag_ComebackHome)
 				{
 					_pAR_tag_pose.m_iSelect_April_tag_id = m_dHome_ID; //0;
-        			m_iDocking_CommandMode = 1;
+					m_iDocking_CommandMode = 1;
 					_pFlag_Value.m_bflag_ComebackHome = false;
 				}
 				break;
@@ -2171,22 +2189,56 @@ public:
 				//LED Toggle Call
 				LedToggleControl_Call(1,10,100,10,1);
 				ToggleOn_Call(18); //Red led
-				return;
-			case rclcpp_action::ResultCode::CANCELED:
-				RCLCPP_ERROR(get_logger(), "NavigateToPose: Goal was canceled");
+				
+				//retry set goal loop//========================================================================================
+				if(ex_iRetry_count < ex_iRetry_Max_count)
+				{
+					RCLCPP_ERROR(get_logger(), "Retry Set_goal !");
+					//Clear Costmap Call
+					Clear_Costmap();
+
+					//Nav Goal call///////////////////////////////////////////////////////
+					Set_goal(_pGoal_pose.goal_positionX, _pGoal_pose.goal_positionY, _pGoal_pose.goal_positionZ,
+					 _pGoal_pose.goal_quarterX, _pGoal_pose.goal_quarterY, _pGoal_pose.goal_quarterZ, _pGoal_pose.goal_quarterW);
+					
+
+					ex_iRetry_count++;
+				}
+				else
+				{
+					ex_iRetry_count = 0; //retry count reset
+					// =================================================================================
+					ret = std::system("~/screenshot_save.sh > /dev/null 2>&1 &");
+					if (ret == 0)
+						RCLCPP_INFO(get_logger(), "Screenshot script executed in background.");
+					else
+						RCLCPP_WARN(get_logger(), "Failed to execute screenshot script.");
+					// =================================================================================
+				}
+				//=============================================================================================================
+				break;
+			case rclcpp_action::ResultCode::CANCELED:				RCLCPP_ERROR(get_logger(), "NavigateToPose: Goal was canceled");
 				_pRobot.m_iMovebase_Result = 1;
 				movebase.data = 1;
 				movebase_publisher->publish(movebase);
 				//LED Toggle Call
 				LedToggleControl_Call(1,10,100,10,1);
 				ToggleOn_Call(18); //Red led
-				return;
-			default:
+				break;
+			default:				
 				RCLCPP_ERROR(get_logger(), "NavigateToPose: Unknown result code");
 				_pRobot.m_iMovebase_Result = 0;
 				movebase.data = 4;
 				movebase_publisher->publish(movebase);
-				return;
+
+				// =================================================================================
+				ret = std::system("~/screenshot_save.sh > /dev/null 2>&1 &");
+				if (ret == 0)
+					RCLCPP_INFO(get_logger(), "Screenshot script executed in background.");
+				else
+					RCLCPP_WARN(get_logger(), "Failed to execute screenshot script.");
+				// =================================================================================
+				break;
 		}
 	}
 

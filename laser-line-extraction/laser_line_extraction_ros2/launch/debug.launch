@@ -1,0 +1,6 @@
+<launch>
+  <node name="line_extractor_node" pkg="laser_line_extraction_ros2" exec="line_extraction_node" output="screen">
+    <param name="scan_topic" value="/front_scan" />
+    <param name="publish_markers" value="true" />
+  </node>
+</launch>

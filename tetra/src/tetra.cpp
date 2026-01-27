@@ -216,7 +216,8 @@ public:
 
 		int iData1 = 1000.0 * RPM_to_ms(Left_Wheel_vel);
 		int iData2 = 1000.0 * RPM_to_ms(Right_Wheel_vel);
-		dssp_rs232_drv_module_set_velocity(iData1, iData2);
+		dssp_rs232_drv_module_set_velocity(iData1, iData2); //ASCII Command
+		//dssp_rs232_drv_module_set_velocity2(iData1, iData2, &m_dX_pos, &m_dY_pos, &m_dTheta, &m_dVelocity_l, &m_dVelocity_a, &m_bumper_data, &m_emg_state); //binary Command
 	}
 	
 	//Callback function////////////////////////////////////////////////////////////////////////////
@@ -402,7 +403,12 @@ private:
 		const std::shared_ptr<interfaces::srv::ParameterWrite::Response> response)
 	{
 		bool bResult = false;
+		dssp_rs232_drv_module_set_servo(0);
+		usleep(10000);
 		dssp_rs232_drv_module_set_parameter(request->num, request->data);
+		usleep(10000);
+		dssp_rs232_drv_module_set_servo(1);
+		usleep(10000);
 		bResult = true;
 		response->command_result = bResult;
 		return true;
@@ -414,7 +420,8 @@ private:
 	{
 		bool bResult = false;
 		if(request->mode == 1) //Position Mode
-		{
+		{			
+			bPosition_mode_flag=true;
 			dssp_rs232_drv_module_set_servo(0);
 			usleep(10000);
 			dssp_rs232_drv_module_set_positionmode();
@@ -424,6 +431,7 @@ private:
 		}
 		else //Velocity Mode
 		{
+			bPosition_mode_flag=false;
 			dssp_rs232_drv_module_set_servo(0);
 			usleep(10000);
 			dssp_rs232_drv_module_set_velocitymode();
@@ -537,7 +545,8 @@ int main(int argc, char * argv[])
 	usleep(10000);
 	//emg flag//
 	bool m_bflag_emg = false;
-	//
+	bool m_bflag_bumper = false;
+
 	printf("□■■■■■■■□■■■■■■□□■■■■■■■□■■■■■■□□□□□□■□□□□\n");
 	printf("□□□□■□□□□■□□□□□□□□□□■□□□□■□□□□□■□□□□□■□□□□\n");
 	printf("□□□□■□□□□■□□□□□□□□□□■□□□□■□□□□□■□□□□■□■□□□\n");
@@ -643,6 +652,28 @@ int main(int argc, char * argv[])
 			usleep(1000);
 			dssp_rs232_drv_module_set_servo(1); //Servo On
 		}
+
+		// if(m_bumper_data == 2 || m_bumper_data == 3) 
+		// {
+		// 	if(m_bflag_bumper)
+		// 	{
+		// 		printf("!! SERVO OFF !! \n");
+		// 		dssp_rs232_drv_module_set_servo(0); //Servo Off
+		// 		usleep(1000);
+		// 		dssp_rs232_drv_module_set_drive_err_reset();
+		// 		usleep(1000);
+		// 		m_bflag_bumper = false;
+		// 	}
+		// }
+		// else
+		// {
+		// 	if(!m_bflag_bumper)
+		// 	{
+		// 		printf("!! SERVO ON !! \n");
+		// 		dssp_rs232_drv_module_set_servo(1); //Servo On
+		// 		m_bflag_bumper = true;
+		// 	}
+		// }
 
 		if(m_emg_state)
 		{
