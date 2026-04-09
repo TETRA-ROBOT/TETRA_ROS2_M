@@ -2099,7 +2099,7 @@ public:
 		_pDynamic_param.m_bFlag_onetime = true;
 		if(_pDynamic_param.m_bFlag_onetime)
 		{
-			if(feedback->distance_remaining < 0.1 && feedback->distance_remaining >= 0)
+			if(feedback->distance_remaining < 0.1 && feedback->distance_remaining > 0)
 			{
 				_pDynamic_param.m_bFlag_onetime = false; 
 				
