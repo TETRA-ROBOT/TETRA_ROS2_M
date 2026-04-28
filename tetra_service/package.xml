@@ -21,7 +21,6 @@
   <build_depend>pcl_ros</build_depend>
   <build_depend>libpcl-dev</build_depend>
   <build_depend>apriltag_msgs</build_depend>
-  <build_depend>apriltag</build_depend>
   <build_depend>interfaces</build_depend>
   
   <exec_depend>rclcpp</exec_depend>
@@ -38,8 +37,10 @@
   <exec_depend>pcl_ros</exec_depend>
   <exec_depend>libpcl-dev</exec_depend>
   <exec_depend>apriltag_msgs</exec_depend>
-  <exec_depend>apriltag</exec_depend>
   <exec_depend>interfaces</exec_depend>
+
+  <depend>robot_localization</depend>
+  <depend>apriltag_ros</depend>
   
   <exec_depend>ros2launch</exec_depend>
 
