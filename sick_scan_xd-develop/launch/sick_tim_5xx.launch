@@ -33,9 +33,9 @@
         <param name="scanner_type" type="string" value="sick_tim_5xx"/>
         <param name="nodename" type="string" value="$(arg nodename)"/>
         <!-- -134 deg -->
-        <param name="min_ang" type="double" value="-2.33874"/>
+        <param name="min_ang" type="double" value="-2.16421"/> <!-- -2.33874 deg -->
         <!-- 134 deg -->
-        <param name="max_ang" type="double" value="2.33874"/>
+        <param name="max_ang" type="double" value="2.16421"/> <!-- 2.33874 deg -->
         <param name="use_binary_protocol" type="bool" value="true"/>
         
         <!-- Optional range filter configuration: If the range of a scan point is less than range_min or greater than range_max, the point can be filtered. -->
@@ -99,7 +99,7 @@
         Note that the transform is specified using (x,y,z,roll,pitch,yaw). In contrast, the ROS static_transform_publisher uses commandline arguments in order (x,y,z,yaw,pitch,roll).
         -->
 
-        <param name="tf_base_frame_id" type="string" value="base_footprint" />   #base_link           
+        <param name="tf_base_frame_id" type="string" value="base_footprint" /> <!--   #base_link    -->       
         <param name="tf_base_lidar_xyz_rpy" type="string" value="0.1372,0,0.142,0,0,0" />
         <param name="tf_publish_rate" type="double" value="$(arg tf_publish_rate)" />
 
@@ -228,4 +228,3 @@
         355 6.195918845
         360 6.283185307
         -->
-

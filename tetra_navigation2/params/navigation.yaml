@@ -87,7 +87,7 @@ local_costmap:
       obstacle_layer:
         plugin: "nav2_costmap_2d::ObstacleLayer"
         enabled: True
-        observation_sources: scan scan2 virtual_obstacle_source
+        observation_sources: scan scan2 virtual_obstacle_source sonar_dl_source sonar_rl_source sonar_rr_source sonar_dr_source
         scan:
           topic: /scan
           max_obstacle_height: 2.0
@@ -110,6 +110,38 @@ local_costmap:
           inf_is_valid: False
         virtual_obstacle_source:
           topic: /Local_virtual_wall
+          data_type: PointCloud2
+          max_obstacle_height: 2.0
+          clearing: True
+          marking: True
+          obstacle_max_range: 100.0
+          raytrace_max_range: 101.0
+        sonar_dl_source:
+          topic: /range_points_DL
+          data_type: PointCloud2
+          max_obstacle_height: 2.0
+          clearing: True
+          marking: True
+          obstacle_max_range: 100.0
+          raytrace_max_range: 101.0
+        sonar_rl_source:
+          topic: /range_points_RL
+          data_type: PointCloud2
+          max_obstacle_height: 2.0
+          clearing: True
+          marking: True
+          obstacle_max_range: 100.0
+          raytrace_max_range: 101.0
+        sonar_rr_source:
+          topic: /range_points_RR
+          data_type: PointCloud2
+          max_obstacle_height: 2.0
+          clearing: True
+          marking: True
+          obstacle_max_range: 100.0
+          raytrace_max_range: 101.0
+        sonar_dr_source:
+          topic: /range_points_DR
           data_type: PointCloud2
           max_obstacle_height: 2.0
           clearing: True

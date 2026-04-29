@@ -8,7 +8,6 @@
   <maintainer email="adharsh.venkat98@gmail.com">Adharsh Venkatachalam</maintainer>
   <license>BSD</license>
   <buildtool_depend>ament_cmake</buildtool_depend>
-  <build_depend>cmake_modules</build_depend>
   <build_depend>eigen</build_depend>
   <build_depend>geometry_msgs</build_depend>
   <build_depend>laser_line_extraction_msgs</build_depend>

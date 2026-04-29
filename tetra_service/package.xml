@@ -19,7 +19,6 @@
   <build_depend>geometry_msgs</build_depend>
   <build_depend>nav_msgs</build_depend>
   <build_depend>pcl_ros</build_depend>
-  <build_depend>libpcl-dev</build_depend>
   <build_depend>apriltag_msgs</build_depend>
   <build_depend>interfaces</build_depend>
   
@@ -35,7 +34,6 @@
   <exec_depend>aruco_ros</exec_depend>
   <exec_depend>aruco_msgs</exec_depend>
   <exec_depend>pcl_ros</exec_depend>
-  <exec_depend>libpcl-dev</exec_depend>
   <exec_depend>apriltag_msgs</exec_depend>
   <exec_depend>interfaces</exec_depend>
 

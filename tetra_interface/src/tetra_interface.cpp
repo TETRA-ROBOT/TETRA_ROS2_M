@@ -6,11 +6,12 @@
 #include "geometry_msgs/msg/pose_stamped.hpp"
 #include "geometry_msgs/msg/pose2_d.hpp"
 #include "geometry_msgs/msg/twist.hpp"
+#include "geometry_msgs/msg/point.hpp"
 #include "sensor_msgs/msg/joy.hpp"
 #include "sensor_msgs/msg/point_cloud2.hpp"
 #include "sensor_msgs/msg/range.hpp" //Ultrasonic option//
-//#include "pcl/point_cloud.hpp"
-//#include "pcl/point_types.hpp"
+#include "pcl/point_cloud.h"
+#include "pcl/point_types.h"
 #include "pcl_conversions/pcl_conversions.h"
 //Custom Message//
 #include "interfaces/msg/gpio.hpp"
@@ -110,10 +111,10 @@ int m_iPowerCheckCount = 0;
 //Ultrasonic data//
 bool m_bUltrasonic_option = false; // true or false
 double m_dUltrasonic[8] = {0.0, };  //Max Ultrasonic: 8ea (TETRA-DS used 4ea _ Option !)
-// sensor_msgs::msg::Range range_msg1; //Ultrasonic_1
-// sensor_msgs::msg::Range range_msg2; //Ultrasonic_2
-// sensor_msgs::msg::Range range_msg3; //Ultrasonic_3
-// sensor_msgs::msg::Range range_msg4; //Ultrasonic_4
+sensor_msgs::msg::Range range_msg1; //Ultrasonic_1
+sensor_msgs::msg::Range range_msg2; //Ultrasonic_2
+sensor_msgs::msg::Range range_msg3; //Ultrasonic_3
+sensor_msgs::msg::Range range_msg4; //Ultrasonic_4
 // double time_offset_in_seconds = 0.0;
 //GPIO data//
 interfaces::msg::Gpio gpio_msg;
@@ -173,10 +174,15 @@ public:
 		docking_status_publisher = this->create_publisher<std_msgs::msg::Int32>("docking_status", 1);
 		gpio_status_publisher = this->create_publisher<interfaces::msg::Gpio>("gpio_status", 10); //interfaces message_GPIO
 		//Ultrasonic_Option//
-		// Ultrasonic1_publisher = this->create_publisher<sensor_msgs::msg::Range>("Ultrasonic_D_L", 10);
-		// Ultrasonic2_publisher = this->create_publisher<sensor_msgs::msg::Range>("Ultrasonic_R_L", 10);
-		// Ultrasonic3_publisher = this->create_publisher<sensor_msgs::msg::Range>("Ultrasonic_R_R", 10);
-		// Ultrasonic4_publisher = this->create_publisher<sensor_msgs::msg::Range>("Ultrasonic_D_R", 10);
+		Ultrasonic1_publisher = this->create_publisher<sensor_msgs::msg::Range>("Ultrasonic_D_L", 10);
+		Ultrasonic2_publisher = this->create_publisher<sensor_msgs::msg::Range>("Ultrasonic_R_L", 10);
+		Ultrasonic3_publisher = this->create_publisher<sensor_msgs::msg::Range>("Ultrasonic_R_R", 10);
+		Ultrasonic4_publisher = this->create_publisher<sensor_msgs::msg::Range>("Ultrasonic_D_R", 10);
+		////sonar range to pointcloud//
+		points_1 = this->create_publisher<sensor_msgs::msg::PointCloud2>("range_points_DL", 10);
+		points_2 = this->create_publisher<sensor_msgs::msg::PointCloud2>("range_points_RL", 10);
+		points_3 = this->create_publisher<sensor_msgs::msg::PointCloud2>("range_points_RR", 10);
+		points_4 = this->create_publisher<sensor_msgs::msg::PointCloud2>("range_points_DR", 10);
 		//Conveyor_Option//
 		conveyor_sensor_publisher = this->create_publisher<std_msgs::msg::Int32>("conveyor_sensor", 1);
 		conveyor_movement_publisher = this->create_publisher<std_msgs::msg::Int32>("conveyor_movement", 1);
@@ -282,9 +288,9 @@ public:
 		m_bConveyor_option = m_bConveyor_option_param.as_bool();
 	
 		// //Ultrasonic_option_param
-		// this->declare_parameter("m_bUltrasonic_option");
-		// m_bUltrasonic_option_param = this->get_parameter("m_bUltrasonic_option");
-		// m_bUltrasonic_option = m_bUltrasonic_option_param.as_bool();
+		this->declare_parameter("m_bUltrasonic_option", rclcpp::PARAMETER_BOOL);
+		m_bUltrasonic_option_param = this->get_parameter("m_bUltrasonic_option");
+		m_bUltrasonic_option = m_bUltrasonic_option_param.as_bool();
 
 
 	}
@@ -292,7 +298,7 @@ public:
 	////value//////////////////////////////////////////////////////////////////////////////
 	rclcpp::Time current_time, last_time;
 	rclcpp::Parameter m_bConveyor_option_param;
-	// rclcpp::Parameter m_bUltrasonic_option_param;
+	rclcpp::Parameter m_bUltrasonic_option_param;
 
 	//Publisher
 	rclcpp::Publisher<std_msgs::msg::Int32>::SharedPtr power_status_publisher;
@@ -303,11 +309,15 @@ public:
 	rclcpp::Publisher<std_msgs::msg::Int32>::SharedPtr docking_status_publisher;
 	rclcpp::Publisher<interfaces::msg::Gpio>::SharedPtr gpio_status_publisher; //interfaces message_GPIO
 	//Publisher _ Ultrasonic_Option//
-	// rclcpp::Publisher<sensor_msgs::msg::Range>::SharedPtr Ultrasonic1_publisher;
-	// rclcpp::Publisher<sensor_msgs::msg::Range>::SharedPtr Ultrasonic2_publisher;
-	// rclcpp::Publisher<sensor_msgs::msg::Range>::SharedPtr Ultrasonic3_publisher;
-	// rclcpp::Publisher<sensor_msgs::msg::Range>::SharedPtr Ultrasonic4_publisher;
+	rclcpp::Publisher<sensor_msgs::msg::Range>::SharedPtr Ultrasonic1_publisher;
+	rclcpp::Publisher<sensor_msgs::msg::Range>::SharedPtr Ultrasonic2_publisher;
+	rclcpp::Publisher<sensor_msgs::msg::Range>::SharedPtr Ultrasonic3_publisher;
+	rclcpp::Publisher<sensor_msgs::msg::Range>::SharedPtr Ultrasonic4_publisher;
 	//Publisher _ Ultrasonic_Option --> Ultrasonic Range To PointCloud2 data pub//
+	rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr points_1; //Ultrasonic_1
+	rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr points_2; //Ultrasonic_2
+	rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr points_3; //Ultrasonic_3
+	rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr points_4; //Ultrasonic_4
 	//To do...
 
 	//Publisher _ Conveyor_Option//
@@ -315,6 +325,105 @@ public:
 	rclcpp::Publisher<std_msgs::msg::Int32>::SharedPtr conveyor_movement_publisher;
 	//Subscription
 
+	void RangeToCloud_D_L(const sensor_msgs::msg::Range::SharedPtr range_msg)
+	{
+		pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>());
+		cloud->header.stamp = pcl_conversions::toPCL(range_msg->header).stamp;
+		cloud->header.frame_id = "sonar_DL";
+		cloud->height = 1;
+
+		if (range_msg->range < Ultrasonic_MAX_range && range_msg->range > Ultrasonic_MIN_range)
+		{
+			pcl::PointXYZ pcl_point;
+			pcl_point.x = range_msg->range;
+			pcl_point.y = 0.0;
+			pcl_point.z = 0.0;
+			cloud->points.push_back(pcl_point);
+			++cloud->width;
+			sensor_msgs::msg::PointCloud2 output;
+			pcl::toROSMsg(*cloud, output);
+			points_1->publish(output);
+		} else {
+			sensor_msgs::msg::PointCloud2 output;
+			pcl::toROSMsg(*cloud, output);
+			points_1->publish(output);
+		}
+	}
+
+	void RangeToCloud_R_L(const sensor_msgs::msg::Range::SharedPtr range_msg)
+	{
+		pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>());
+		cloud->header.stamp = pcl_conversions::toPCL(range_msg->header).stamp;
+		cloud->header.frame_id = "sonar_RL";
+		cloud->height = 1;
+
+		if (range_msg->range < Ultrasonic_MAX_range && range_msg->range > Ultrasonic_MIN_range)
+		{
+			pcl::PointXYZ pcl_point;
+			pcl_point.x = range_msg->range;
+			pcl_point.y = 0.0;
+			pcl_point.z = 0.0;
+			cloud->points.push_back(pcl_point);
+			++cloud->width;
+			sensor_msgs::msg::PointCloud2 output;
+			pcl::toROSMsg(*cloud, output);
+			points_2->publish(output);
+		} else {
+			sensor_msgs::msg::PointCloud2 output;
+			pcl::toROSMsg(*cloud, output);
+			points_2->publish(output);
+		}
+	}
+
+	void RangeToCloud_R_R(const sensor_msgs::msg::Range::SharedPtr range_msg)
+	{
+		pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>());
+		cloud->header.stamp = pcl_conversions::toPCL(range_msg->header).stamp;
+		cloud->header.frame_id = "sonar_RR";
+		cloud->height = 1;
+
+		if (range_msg->range < Ultrasonic_MAX_range && range_msg->range > Ultrasonic_MIN_range)
+		{
+			pcl::PointXYZ pcl_point;
+			pcl_point.x = range_msg->range;
+			pcl_point.y = 0.0;
+			pcl_point.z = 0.0;
+			cloud->points.push_back(pcl_point);
+			++cloud->width;
+			sensor_msgs::msg::PointCloud2 output;
+			pcl::toROSMsg(*cloud, output);
+			points_3->publish(output);
+		} else {
+			sensor_msgs::msg::PointCloud2 output;
+			pcl::toROSMsg(*cloud, output);
+			points_3->publish(output);
+		}
+	}
+
+	void RangeToCloud_D_R(const sensor_msgs::msg::Range::SharedPtr range_msg)
+	{
+		pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>());
+		cloud->header.stamp = pcl_conversions::toPCL(range_msg->header).stamp;
+		cloud->header.frame_id = "sonar_DR";
+		cloud->height = 1;
+
+		if (range_msg->range < Ultrasonic_MAX_range && range_msg->range > Ultrasonic_MIN_range)
+		{
+			pcl::PointXYZ pcl_point;
+			pcl_point.x = range_msg->range;
+			pcl_point.y = 0.0;
+			pcl_point.z = 0.0;
+			cloud->points.push_back(pcl_point);
+			++cloud->width;
+			sensor_msgs::msg::PointCloud2 output;
+			pcl::toROSMsg(*cloud, output);
+			points_4->publish(output);
+		} else {
+			sensor_msgs::msg::PointCloud2 output;
+			pcl::toROSMsg(*cloud, output);
+			points_4->publish(output);
+		}
+	}
 
 private:
 	////value/////////////////////////////////////////////////////////////////////////////////
@@ -823,11 +932,6 @@ int main(int argc, char * argv[])
 	setvbuf(stdout, NULL, _IONBF, BUFSIZ);
 	auto node = std::make_shared<TETRA_INTERFACE>();
 
-	//init
-	node->current_time = node->now();
-    	node->last_time = node->now();
-
-
 	rclcpp::WallRate loop_rate(30); //default: 30HZ
 	sprintf(port, "/dev/ttyS1");
 	//sprintf(port, "/dev/TETRA");
@@ -846,6 +950,9 @@ int main(int argc, char * argv[])
 	//Charge port Enable//
 	dssp_rs232_power_module_set_charging_ready(1);
 
+	//init
+	if(m_bUltrasonic_option) dssp_rs232_power_module_set_Ultrasonic(1);
+
 	printf("□■■■■■□□□□□□□■□□■■■■□□□□□□□■■■■■□□□□□□□□□□□□□□□□□□□□□□□□□■□ \n");
 	printf("□■□□□□■□□□□□□■□■□□□□■□□□□□□■□□□□■□□□□□□□□□□□□□□□□□□□□□□□□■□ \n");
 	printf("□■□□□□■□□□□□■□□■□□□□■□□□□□□■□□□□■□□□□□□□□□□□□□□□□□□□□□□□□■□ \n");
@@ -860,6 +967,9 @@ int main(int argc, char * argv[])
 	while (rclcpp::ok() && !stop_requested)
 	{
 		rclcpp::spin_some(node);
+
+		node->current_time = node->now();
+    	node->last_time = node->now();
 
 		//Power Status Check Loop (error check)
 		m_iPowerCheck = dssp_rs232_power_module_read_tetra(&m_dbattery, &m_dVoltage, &m_dCurrent, &m_imode_status, m_iInput, m_iOutput, m_dUltrasonic);
@@ -937,70 +1047,74 @@ int main(int argc, char * argv[])
 
 		//Ultrasonic data Check_Option/////////////////////////////////////////////////////////
 		//Ultrasonic Paramter Setting
-		// char frameid1[] = "/Ultrasonic_Down_Left";
-		// range_msg1.header.frame_id = frameid1;
-		// range_msg1.radiation_type = 0; //Ultrasonic
-		// range_msg1.field_of_view = (60.0/180.0) * M_PI; //
-		// range_msg1.min_range = Ultrasonic_MIN_range; 
-		// range_msg1.max_range = Ultrasonic_MAX_range; 
+		char frameid1[] = "sonar_DL";
+		range_msg1.header.frame_id = frameid1;
+		range_msg1.radiation_type = 0; //Ultrasonic
+		range_msg1.field_of_view = (60.0/180.0) * M_PI; //
+		range_msg1.min_range = Ultrasonic_MIN_range; 
+		range_msg1.max_range = Ultrasonic_MAX_range; 
 
-		// char frameid2[] = "/Ultrasonic_Rear_Left";
-		// range_msg2.header.frame_id = frameid2;
-		// range_msg2.radiation_type = 0; //Ultrasonic
-		// range_msg2.field_of_view = (60.0/180.0) * M_PI; //
-		// range_msg2.min_range = Ultrasonic_MIN_range;
-		// range_msg2.max_range = Ultrasonic_MAX_range;
+		char frameid2[] = "sonar_RL";
+		range_msg2.header.frame_id = frameid2;
+		range_msg2.radiation_type = 0; //Ultrasonic
+		range_msg2.field_of_view = (60.0/180.0) * M_PI; //
+		range_msg2.min_range = Ultrasonic_MIN_range;
+		range_msg2.max_range = Ultrasonic_MAX_range;
 
-		// char frameid3[] = "/Ultrasonic_Rear_Right";
-		// range_msg3.header.frame_id = frameid3;
-		// range_msg3.radiation_type = 0; //Ultrasonic
-		// range_msg3.field_of_view = (60.0/180.0) * M_PI; //
-		// range_msg3.min_range = Ultrasonic_MIN_range;
-		// range_msg3.max_range = Ultrasonic_MAX_range;
+		char frameid3[] = "sonar_RR";
+		range_msg3.header.frame_id = frameid3;
+		range_msg3.radiation_type = 0; //Ultrasonic
+		range_msg3.field_of_view = (60.0/180.0) * M_PI; //
+		range_msg3.min_range = Ultrasonic_MIN_range;
+		range_msg3.max_range = Ultrasonic_MAX_range;
 
-		// char frameid4[] = "/Ultrasonic_Down_Right";
-		// range_msg4.header.frame_id = frameid4;
-		// range_msg4.radiation_type = 0; //Ultrasonic
-		// range_msg4.field_of_view = (60.0/180.0) * M_PI; //
-		// range_msg4.min_range = Ultrasonic_MIN_range;
-		// range_msg4.max_range = Ultrasonic_MAX_range;
+		char frameid4[] = "sonar_DR";
+		range_msg4.header.frame_id = frameid4;
+		range_msg4.radiation_type = 0; //Ultrasonic
+		range_msg4.field_of_view = (60.0/180.0) * M_PI; //
+		range_msg4.min_range = Ultrasonic_MIN_range;
+		range_msg4.max_range = Ultrasonic_MAX_range;
 
-		// if(m_dUltrasonic[0] == 0.0)
-		// 	range_msg1.range = Ultrasonic_MAX_range;
-		// else
-		// 	range_msg1.range = m_dUltrasonic[0];
+		if(m_dUltrasonic[0] == 0.0)
+			range_msg1.range = Ultrasonic_MAX_range;
+		else
+			range_msg1.range = m_dUltrasonic[0];
 
-		// range_msg1.header.stamp = node->current_time ;
+		range_msg1.header.stamp = node->current_time ;
 
-		// if(m_dUltrasonic[1] == 0.0)
-		// 	range_msg2.range = Ultrasonic_MAX_range;
-		// else
-		// 	range_msg2.range = m_dUltrasonic[1];
+		if(m_dUltrasonic[1] == 0.0)
+			range_msg2.range = Ultrasonic_MAX_range;
+		else
+			range_msg2.range = m_dUltrasonic[1];
 
-		// range_msg2.header.stamp = node->current_time ;
+		range_msg2.header.stamp = node->current_time ;
 
-		// if(m_dUltrasonic[2] == 0.0)
-		// 	range_msg3.range = Ultrasonic_MAX_range;
-		// else
-		// 	range_msg3.range = m_dUltrasonic[2];
+		if(m_dUltrasonic[2] == 0.0)
+			range_msg3.range = Ultrasonic_MAX_range;
+		else
+			range_msg3.range = m_dUltrasonic[2];
 
-		// range_msg3.header.stamp = node->current_time ;
+		range_msg3.header.stamp = node->current_time ;
 
-		// if(m_dUltrasonic[3] == 0.0)
-		// 	range_msg4.range = Ultrasonic_MAX_range;
-		// else
-		// 	range_msg4.range = m_dUltrasonic[3];
+		if(m_dUltrasonic[3] == 0.0)
+			range_msg4.range = Ultrasonic_MAX_range;
+		else
+			range_msg4.range = m_dUltrasonic[3];
 			
-		// range_msg4.header.stamp = node->current_time ;
+		range_msg4.header.stamp = node->current_time ;
 
 		// //Ultrasonic Publish
-		// if(m_bUltrasonic_option) //Option --> default: false
-		// {
-		// 	node->Ultrasonic1_publisher->publish(range_msg1);
-		// 	node->Ultrasonic2_publisher->publish(range_msg2);
-		// 	node->Ultrasonic3_publisher->publish(range_msg3);
-		// 	node->Ultrasonic4_publisher->publish(range_msg4);
-		// }
+		if(m_bUltrasonic_option) //Option --> default: false
+		{
+			node->Ultrasonic1_publisher->publish(range_msg1);
+			node->Ultrasonic2_publisher->publish(range_msg2);
+			node->Ultrasonic3_publisher->publish(range_msg3);
+			node->Ultrasonic4_publisher->publish(range_msg4);
+			node->RangeToCloud_D_L(std::make_shared<sensor_msgs::msg::Range>(range_msg1));
+			node->RangeToCloud_R_L(std::make_shared<sensor_msgs::msg::Range>(range_msg2));
+			node->RangeToCloud_R_R(std::make_shared<sensor_msgs::msg::Range>(range_msg3));
+			node->RangeToCloud_D_R(std::make_shared<sensor_msgs::msg::Range>(range_msg4));
+		}
 		///////////////////////////////////////////////////////////////////////////////////////
 
 		//Conveyor data Check_Option///////////////////////////////////////////////////////////

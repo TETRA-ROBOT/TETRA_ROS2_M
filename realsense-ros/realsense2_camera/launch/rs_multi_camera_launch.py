@@ -37,6 +37,8 @@ local_parameters = [{'name': 'camera_name1', 'default': 'camera1', 'description'
                     {'name': 'camera_name2', 'default': 'camera2', 'description': 'camera2 unique name'},
                     {'name': 'camera_namespace1', 'default': 'camera1', 'description': 'camera1 namespace'},
                     {'name': 'camera_namespace2', 'default': 'camera2', 'description': 'camera2 namespace'},
+                    {'name': 'serial_no1',        'default': "''", 'description': 'choose device1 by serial number'},
+                    {'name': 'serial_no2',        'default': "''", 'description': 'choose device2 by serial number'},
                     ]
 
 def set_configurable_parameters(local_params):
@@ -74,5 +76,5 @@ def generate_launch_description():
         OpaqueFunction(function=rs_launch.launch_setup,
                        kwargs = {'params'           : set_configurable_parameters(params2),
                                  'param_name_suffix': '2'}),
-        OpaqueFunction(function=launch_static_transform_publisher_node)
+        #OpaqueFunction(function=launch_static_transform_publisher_node)
     ])

@@ -167,10 +167,10 @@ def generate_launch_description():
 			[get_package_share_directory('cyglidar_d1_ros2'), '/launch/cyglidar.launch.py']),
 		),
 		
-		# realsense D455
+		# realsense D455 
 		IncludeLaunchDescription(
 		PythonLaunchDescriptionSource(
-			[get_package_share_directory('realsense2_camera'), '/launch/rs_launch.py']),
+			[get_package_share_directory('realsense2_camera'), '/launch/rs_launch.py']), # rs_multi_camera_launch.py
 		),
         
         ]

@@ -17,11 +17,11 @@
   </xacro:macro>
 
    <!-- Include all component files -->
-   <xacro:include filename="$(find tetraDS_description)/urdf/tetraDS/materials.urdf.xacro" />
-   <xacro:include filename="$(find tetraDS_description)/urdf/tetraDS/base.urdf.xacro" />
+   <xacro:include filename="$(find tetra_description)/urdf/materials.urdf.xacro" />
+   <xacro:include filename="$(find tetra_description)/urdf/base.urdf.xacro" />
    
    <!-- Add the base and wheels -->
-   <base name="base" color="Black"/>
+   <base name="base" color="black"/>
   
   <link name="laser">
       <visual>
@@ -29,7 +29,7 @@
         <geometry>
           <box size="0.01 0.01 0.01" />
         </geometry>
-        <material name="Grey" />
+        <material name="grey" />
       </visual>
   </link>
 
@@ -45,7 +45,7 @@
         <geometry>
           <box size="0.01 0.01 0.01" />
         </geometry>
-        <material name="Grey" />
+        <material name="grey" />
       </visual>
   </link>
 
@@ -55,20 +55,20 @@
     <child link="imu_link" />
   </joint>
 
-  <link name="usb_cam">
+  <link name="camera">
       <visual>
         <origin xyz="0 0 0" rpy="0 0 0" />
         <geometry>
           <box size="0.01 0.01 0.01" />
         </geometry>
-        <material name="Grey" />
+        <material name="grey" />
       </visual>
   </link>
 
-  <joint name="usb_cam" type="fixed">
+  <joint name="camera" type="fixed">
     <origin xyz="-0.384 0.0 0.1387" rpy="1.5708 3.14159 4.71239"/>
     <parent link="base_link"/>
-    <child link="usb_cam" />
+    <child link="camera" />
   </joint>  
 
 
@@ -78,7 +78,7 @@
         <geometry>
           <box size="0.01 0.48 0.01" />
         </geometry>
-        <material name="TransparentBlack" />
+        <material name="transparentblack" />
       </visual>
   </link>
 
@@ -95,7 +95,7 @@
         <geometry>
           <box size="0.01 0.01 0.01" />
         </geometry>
-        <material name="Grey" />
+        <material name="grey" />
       </visual>
   </link>
 
@@ -111,7 +111,7 @@
         <geometry>
           <box size="0.01 0.01 0.01" />
         </geometry>
-        <material name="Grey" />
+        <material name="grey" />
       </visual>
   </link>
 
@@ -127,7 +127,7 @@
         <geometry>
           <box size="0.01 0.01 0.01" />
         </geometry>
-        <material name="Grey" />
+        <material name="grey" />
       </visual>
   </link>
 
@@ -143,7 +143,7 @@
         <geometry>
           <box size="0.01 0.01 0.01" />
         </geometry>
-        <material name="Grey" />
+        <material name="grey" />
       </visual>
   </link>
 
@@ -159,7 +159,7 @@
         <geometry>
           <box size="0.01 0.01 0.01" />
         </geometry>
-        <material name="Grey" />
+        <material name="grey" />
       </visual>
   </link>
 
@@ -175,7 +175,7 @@
         <geometry>
           <box size="0.01 0.01 0.01" />
         </geometry>
-        <material name="Grey" />
+        <material name="grey" />
       </visual>
   </link>
 
@@ -184,29 +184,5 @@
     <parent link="base_link"/>
     <child link="camera2_link" />
   </joint>
-
- <link name="base_Upperlink">
-   <visual>
-    <origin xyz=" 0 0 0 " rpy="0 0 0" />
-      <geometry>
-        <mesh
-          filename="package://tetraDS_description/meshes/Platform Body_U.STL" scale="0.001 0.001 0.001" />
-      </geometry>
-      <material name="TransparentRed"/>        
-    </visual>
-      <collision>
-            <origin xyz="0 0 0" rpy="0 0 0"/>
-            <geometry>
-                <cylinder length="${base_length}" radius="${base_radius}"/>
-            </geometry>
-      </collision>
-  </link>
-
-  <joint name="base_Upperlink" type="fixed">
-    <origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
-    <parent link="base_link"/>
-    <child link="base_Upperlink" />
-  </joint>
-
 
 </robot>
