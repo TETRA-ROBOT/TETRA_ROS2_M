@@ -56,6 +56,7 @@ CAMERAS.append(
 )
 
 
+
 def generate_launch_description():
     ld = LaunchDescription()
 
@@ -69,7 +70,9 @@ def generate_launch_description():
             name=camera.name,
             namespace=camera.namespace,
             parameters=[camera.param_path],
-            remappings=camera.remappings
+            remappings=camera.remappings,
+            respawn=True,              # 노드가 죽으면 자동 재시작
+            respawn_delay=2.0          # 재시작 지연 시간 (초)
         )
         for camera in CAMERAS
     ]
