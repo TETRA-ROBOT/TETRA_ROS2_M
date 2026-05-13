@@ -2159,7 +2159,6 @@ public:
 	//Navigation to Pose Result Callback//
 	void resultCallback(const GoalHandleNavigateToPose::WrappedResult & result)
 	{
-		int ret = -1;
 		switch (result.code) 
 		{
 			case rclcpp_action::ResultCode::SUCCEEDED:				
@@ -2207,13 +2206,6 @@ public:
 				else
 				{
 					ex_iRetry_count = 0; //retry count reset
-					// =================================================================================
-					ret = std::system("~/screenshot_save.sh > /dev/null 2>&1 &");
-					if (ret == 0)
-						RCLCPP_INFO(get_logger(), "Screenshot script executed in background.");
-					else
-						RCLCPP_WARN(get_logger(), "Failed to execute screenshot script.");
-					// =================================================================================
 				}
 				//=============================================================================================================
 				break;
@@ -2224,6 +2216,8 @@ public:
 				//LED Toggle Call
 				LedToggleControl_Call(1,10,100,10,1);
 				ToggleOn_Call(18); //Red led
+
+				ex_iRetry_count = 0;
 				break;
 			default:				
 				RCLCPP_ERROR(get_logger(), "NavigateToPose: Unknown result code");
@@ -2231,14 +2225,6 @@ public:
 				movebase.data = 4;
 				movebase_publisher->publish(movebase);
 
-				// =================================================================================
-				ret = std::system("~/screenshot_save.sh > /dev/null 2>&1 &");
-				if (ret == 0)
-					RCLCPP_INFO(get_logger(), "Screenshot script executed in background.");
-				else
-					RCLCPP_WARN(get_logger(), "Failed to execute screenshot script.");
-				// =================================================================================
-				break;
 		}
 	}
 
