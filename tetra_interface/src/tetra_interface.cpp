@@ -697,7 +697,7 @@ private:
 		const std::shared_ptr<interfaces::srv::PowerParameterWrite::Response> response)
 	{
 		bool bResult = false;
-		dssp_rs232_conveyor_module_parameter_write(request->num, request->data);
+		dssp_rs232_power_module_parameter_write(request->num, request->data);
 	
 		bResult = true;
 		response->command_result = bResult;
