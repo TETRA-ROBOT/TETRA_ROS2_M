@@ -32,6 +32,7 @@ extern "C"
 #include <string.h>
 #include <math.h>
 #include <unistd.h>
+#include <bitset>
 #include <atomic>
 #include <mutex>
 #include <condition_variable>
@@ -70,6 +71,35 @@ int m_emg_state = 0;
 //Error Code
 int m_left_error_code = 0;
 int m_right_error_code = 0;
+
+constexpr int BUMPER_FRONT_MASK = 0x01;
+constexpr int SERVO_MASK = 0x02;
+constexpr int BUMPER_BACK_MASK = 0x08;
+
+bool IsServoEnabled(int data)
+{
+	return (data & SERVO_MASK) != 0;
+}
+
+bool IsFrontBumperActive(int data)
+{
+	return (data & BUMPER_FRONT_MASK) != 0;
+}
+
+bool IsBackBumperActive(int data)
+{
+	return (data & BUMPER_BACK_MASK) != 0;
+}
+
+void PrintBumperServoState(int data)
+{
+	std::bitset<4> bits(static_cast<unsigned long>(data));
+	printf("[bumper/servo] %s -> servo:%s front:%s back:%s\n",
+		bits.to_string().c_str(),
+		IsServoEnabled(data) ? "ON" : "OFF",
+		IsFrontBumperActive(data) ? "ON" : "OFF",
+		IsBackBumperActive(data) ? "ON" : "OFF");
+}
 //Position move
 int m_iPOS_Y = 0;
 int m_iPOS_Theta = 0;
@@ -547,6 +577,40 @@ int main(int argc, char * argv[])
 	bool m_bflag_emg = false;
 	bool m_bflag_bumper = false;
 
+	dssp_rs232_drv_module_read_bumper_emg(&m_bumper_data, &m_emg_state, &m_left_error_code, &m_right_error_code);
+	PrintBumperServoState(m_bumper_data);
+
+	//Error Code Check 
+	if(m_left_error_code != 48 || m_right_error_code != 48)
+	{
+		printf("[Motor Driver Error] Left Error Code: %d \n", m_left_error_code);
+		printf("[Motor Driver Error] Right Error Code: %d \n", m_right_error_code);
+	}
+
+	if(IsServoEnabled(m_bumper_data)) 
+	{
+		printf("!! SERVO ON !! \n");
+		dssp_rs232_drv_module_set_servo(1); //Servo On
+		m_bflag_bumper = false;
+	}
+	else
+	{
+		printf("!! SERVO OFF !! \n");
+		dssp_rs232_drv_module_set_servo(0); //Servo Off
+		m_bflag_bumper = true;
+	}
+
+	// if(m_emg_state)
+	// {
+	// 		dssp_rs232_drv_module_set_servo(0);
+	// 		m_bflag_emg = false;
+	// }
+	// else
+	// {
+	// 		dssp_rs232_drv_module_set_servo(1); //Servo On
+	// 		m_bflag_emg = true;
+	// }
+
 	printf("□■■■■■■■□■■■■■■□□■■■■■■■□■■■■■■□□□□□□■□□□□\n");
 	printf("□□□□■□□□□■□□□□□□□□□□■□□□□■□□□□□■□□□□□■□□□□\n");
 	printf("□□□□■□□□□■□□□□□□□□□□■□□□□■□□□□□■□□□□■□■□□□\n");
@@ -653,47 +717,47 @@ int main(int argc, char * argv[])
 			dssp_rs232_drv_module_set_servo(1); //Servo On
 		}
 
-		// if(m_bumper_data == 2 || m_bumper_data == 3) 
-		// {
-		// 	if(m_bflag_bumper)
-		// 	{
-		// 		printf("!! SERVO OFF !! \n");
-		// 		dssp_rs232_drv_module_set_servo(0); //Servo Off
-		// 		usleep(1000);
-		// 		dssp_rs232_drv_module_set_drive_err_reset();
-		// 		usleep(1000);
-		// 		m_bflag_bumper = false;
-		// 	}
-		// }
-		// else
-		// {
-		// 	if(!m_bflag_bumper)
-		// 	{
-		// 		printf("!! SERVO ON !! \n");
-		// 		dssp_rs232_drv_module_set_servo(1); //Servo On
-		// 		m_bflag_bumper = true;
-		// 	}
-		// }
-
-		if(m_emg_state)
+		if(IsServoEnabled(m_bumper_data)) 
 		{
-			if(m_bflag_emg)
+			if(m_bflag_bumper)
 			{
-				dssp_rs232_drv_module_set_servo(0); //Servo Off
-				usleep(1000);
-				dssp_rs232_drv_module_set_drive_err_reset();
-				usleep(1000);
-				m_bflag_emg = false;
+				printf("!! SERVO ON !! \n");
+				dssp_rs232_drv_module_set_servo(1); //Servo On
+				m_bflag_bumper = false;
 			}
 		}
 		else
 		{
-			if(!m_bflag_emg)
+			if(!m_bflag_bumper)
 			{
-				dssp_rs232_drv_module_set_servo(1); //Servo On
-				m_bflag_emg = true;
+				printf("!! SERVO OFF !! \n");
+				dssp_rs232_drv_module_set_servo(0); //Servo Off
+				usleep(1000);
+				dssp_rs232_drv_module_set_drive_err_reset();
+				usleep(1000);
+				m_bflag_bumper = true;
 			}
 		}
+
+		// if(m_emg_state)
+		// {
+		// 	if(m_bflag_emg)
+		// 	{
+		// 		dssp_rs232_drv_module_set_servo(0); //Servo Off
+		// 		usleep(1000);
+		// 		dssp_rs232_drv_module_set_drive_err_reset();
+		// 		usleep(1000);
+		// 		m_bflag_emg = false;
+		// 	}
+		// }
+		// else
+		// {
+		// 	if(!m_bflag_emg)
+		// 	{
+		// 		dssp_rs232_drv_module_set_servo(1); //Servo On
+		// 		m_bflag_emg = true;
+		// 	}
+		// }
 
 		//node->read();
 		if(first) 
