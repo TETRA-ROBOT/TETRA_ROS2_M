@@ -933,7 +933,7 @@ int main(int argc, char * argv[])
 	auto node = std::make_shared<TETRA_INTERFACE>();
 
 	rclcpp::WallRate loop_rate(30); //default: 30HZ
-	sprintf(port, "/dev/ttyS1");
+	sprintf(port, "/dev/ttyS3");
 	//sprintf(port, "/dev/TETRA");
 
 	//RS232 Connect
