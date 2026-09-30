@@ -589,12 +589,14 @@ public:
         printf("## [2D Pose Estimate] m_bFlag_nomotion false \n");
       }
     } else {
-      printf("_pDynamic_param.m_linear_vel = %d \n",
-             _pDynamic_param.m_linear_vel);
-      printf("_pDynamic_param.m_angular_vel = %d \n",
-             _pDynamic_param.m_angular_vel);
-      printf("_pFlag_Value.m_bFlag_Initialpose = %d \n",
-             _pFlag_Value.m_bFlag_Initialpose);
+
+      // printf("_pDynamic_param.m_linear_vel = %d \n",
+      //        _pDynamic_param.m_linear_vel);
+      // printf("_pDynamic_param.m_angular_vel = %d \n",
+      //        _pDynamic_param.m_angular_vel);
+      // printf("_pFlag_Value.m_bFlag_Initialpose = %d \n",
+      //        _pFlag_Value.m_bFlag_Initialpose);
+
       _pFlag_Value.m_bFlag_Initialpose = false;
       _pFlag_Value.m_bFlag_nomotion = false;
     }
@@ -1841,6 +1843,7 @@ public:
         "FollowPath.rotate_to_heading_angular_vel", 0.785398));
     parameters.emplace_back(
         rclcpp::Parameter("FollowPath.rotate_to_heading_min_angle", 0.785398));
+    parameters.emplace_back(rclcpp::Parameter("general_goal_checker.xy_goal_tolerance", 0.05));
     set_speed_parameter_client_->set_parameters(parameters);
     _pDynamic_param.m_bFlag_onetime = true;
     nav_to_pose_action_client->async_send_goal(goal_msg, send_goal_options);
@@ -2095,6 +2098,7 @@ public:
           parameters.emplace_back(rclcpp::Parameter(
               "FollowPath.rotate_to_heading_min_angle", 0.785398));
         }
+				parameters.emplace_back(rclcpp::Parameter("general_goal_checker.xy_goal_tolerance", 0.35));
         set_speed_parameter_client_->set_parameters(parameters);
       }
     }

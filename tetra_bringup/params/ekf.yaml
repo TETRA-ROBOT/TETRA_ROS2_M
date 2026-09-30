@@ -1,6 +1,10 @@
 ### ekf config file ###
 ekf_filter_node:
     ros__parameters:
+        qos_overrides:
+            /odometry/filtered:
+                publisher:
+                    reliability: best_effort
         frequency: 50.0
         two_d_mode: true #false
         transform_time_offset: 0.0
@@ -14,8 +18,8 @@ ekf_filter_node:
 
         odom0: odom
         odom0_config: [true,  true,  false,
-                       false, false, true,
-                       true, true, false, 
+                       false, false, false,
+                       true, false, false, 
                        false, false, false,
                        false, false, false]
         odom0_differential: false #false
@@ -26,7 +30,7 @@ ekf_filter_node:
                       false, false, false, 
                       false, false, false,
                       false, false, true,
-                      true,  false, false]
+                      false,  false, false]
         imu0_differential: false # false
         imu0_linear_acceleration_rejection_threshold: 0.55 # 0.8
         imu0_remove_gravitational_acceleration: true
