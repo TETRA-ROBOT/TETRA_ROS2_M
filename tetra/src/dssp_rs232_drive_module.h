@@ -1,4 +1,3 @@
-
 int  dssp_rs232_drv_module_create(const char *device, int time_out);
 void dssp_rs232_drv_module_destroy();
 int  dssp_rs232_drv_module_read_encoder(int *encoder_l, int *encoder_r);	
@@ -15,4 +14,4 @@ int  dssp_rs232_drv_module_reset_odometry();
 int  dssp_rs232_drv_module_set_velocitymode();
 int  dssp_rs232_drv_module_set_positionmode();
 int  dssp_rs232_drv_module_set_charge(int mode);
-int  dssp_rs232_drv_module_set_velocity2(int velocity_l, int velocity_r, int *Xpos_mm, int *Ypos_mm, int *deg, int *bumper, int *emg);
+int  dssp_rs232_drv_module_set_velocity2(int velocity_l, int velocity_r, double *Xpos_mm, double *Ypos_mm, double *deg, double *vel_l, double *vel_r, int *bumper, int *emg);
